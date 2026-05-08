@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#050505" />
+  <title>GJBROSS</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <img src="/logo.jpg" class="logo" alt="GJBROSS" />
+      <div>
+        <p class="eyebrow">Lista especial</p>
+        <h1>GJBROSS</h1>
+        <p class="muted">Invitados del boliche</p>
+      </div>
+    </header>
+
+    <section class="pin-card" id="pinCard">
+      <input id="pinInput" type="password" inputmode="numeric" placeholder="PIN del personal" />
+      <button id="savePinBtn">Entrar</button>
+    </section>
+
+    <section class="stats">
+      <div><span id="guestCount">0</span><small>Invitados</small></div>
+      <div><span id="peopleCount">0</span><small>Personas</small></div>
+      <div><span id="attendedCount">0</span><small>Asistieron</small></div>
+      <div><span id="pendingCount">0</span><small>Pendientes</small></div>
+    </section>
+
+    <form class="card form" id="guestForm">
+      <input id="nameInput" placeholder="Nombre del invitado" autocomplete="off" />
+      <input id="qtyInput" type="number" min="1" value="1" />
+      <button>Agregar</button>
+    </form>
+
+    <section class="card">
+      <input id="searchInput" class="search" placeholder="Buscar invitado..." />
+      <div id="list" class="list"></div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
