@@ -399,3 +399,7 @@ body{
   font-weight:900;
   flex:0 0 42px;
 }
+
+.history-guests.hidden{
+  display:none !important;
+}
