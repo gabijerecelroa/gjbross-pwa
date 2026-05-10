@@ -14,6 +14,7 @@ let pin = localStorage.getItem('gjbross_pin') || '';
 
 $('pinInput').value = pin;
 $('closeDateInput').value = today();
+$('vipCloseDateInput').value = today();
 
 if (pin) $('pinCard').classList.add('hidden');
 else $('pinCard').classList.remove('hidden');
@@ -30,6 +31,7 @@ $('btnVipTab').onclick = () => showTab('vip');
 $('btnBlacklistTab').onclick = () => showTab('blacklist');
 $('btnHistoryTab').onclick = () => showTab('history');
 $('closeListBtn').onclick = closeList;
+$('closeVipListBtn').onclick = closeVipList;
 $('clearHistoryBtn').onclick = clearHistory;
 
 function showTab(tab) {
@@ -197,11 +199,11 @@ $('vipForm').onsubmit = async (e) => {
 
 async function closeList() {
   if (!pin) return alert('Primero coloca el PIN');
-  if (!guests.length) return alert('La lista está vacía');
+  if (!guests.length) return alert('La lista de invitados está vacía');
 
   const date = $('closeDateInput').value || today();
 
-  const ok = confirm('Cerrar la lista de ' + formatDate(date) + '? Se guardará en historial y se vaciará la lista actual.');
+  const ok = confirm('Cerrar la lista de invitados de ' + formatDate(date) + '? Se guardará en historial y se vaciará solo Invitados.');
   if (!ok) return;
 
   try {
@@ -216,7 +218,37 @@ async function closeList() {
     saveCache();
     renderGuests();
     renderHistory();
-    alert('Lista cerrada y guardada en historial.');
+    alert('Lista de invitados cerrada y guardada en historial.');
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function closeVipList() {
+  if (!pin) return alert('Primero coloca el PIN');
+  if (!vipGuests.length) return alert('La lista VIP está vacía');
+
+  const date = $('vipCloseDateInput').value || today();
+
+  const ok = confirm('Cerrar la lista VIP de ' + formatDate(date) + '? Se agregará al historial de esa fecha con etiqueta VIP.');
+  if (!ok) return;
+
+  try {
+    const data = await api('/api/close-vip-list', {
+      method: 'POST',
+      body: JSON.stringify({ date })
+    });
+
+    guests = (data.guests || []).map(normalizeGuest);
+    vipGuests = (data.vipGuests || []).map(normalizeGuest);
+    history = data.history || [];
+
+    saveCache();
+    renderGuests();
+    renderVip();
+    renderHistory();
+
+    alert('Lista VIP cerrada y agregada al historial.');
   } catch (e) {
     alert(e.message);
   }

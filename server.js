@@ -190,34 +190,91 @@ app.delete('/api/vip-guests/:id', requirePin, async (req, res) => {
   }
 });
 
+function normalizeClosedGuest(g, vip) {
+  const qty = Math.max(1, Number(g.qty || 1));
+  const entered = Math.max(0, Math.min(qty, Number(g.entered || 0)));
+
+  return {
+    ...g,
+    vip,
+    qty,
+    entered,
+    attended: entered >= qty
+  };
+}
+
+function addToHistory(data, date, listToAdd) {
+  let item = (data.history || []).find(h => h.date === date);
+
+  if (!item) {
+    item = {
+      id: crypto.randomUUID(),
+      date,
+      closedAt: new Date().toISOString(),
+      guests: []
+    };
+    data.history = [item, ...(data.history || [])];
+  }
+
+  item.guests = [...(item.guests || []), ...listToAdd];
+  item.closedAt = new Date().toISOString();
+
+  return item;
+}
+
 app.post('/api/close-list', requirePin, async (req, res) => {
   try {
     const data = await readData();
     const guests = data.guests || [];
 
-    if (!guests.length) return res.status(400).json({ error: 'La lista está vacía' });
+    if (!guests.length) {
+      return res.status(400).json({ error: 'La lista de invitados está vacía' });
+    }
 
     const date = String(req.body.date || new Date().toISOString().slice(0, 10));
+    const normalList = guests.map(g => normalizeClosedGuest(g, false));
 
-    const item = {
-      id: crypto.randomUUID(),
-      date,
-      closedAt: new Date().toISOString(),
-      guests: guests.map(g => ({
-        ...g,
-        qty: Math.max(1, Number(g.qty || 1)),
-        entered: Math.max(0, Number(g.entered || 0)),
-        attended: Number(g.entered || 0) >= Number(g.qty || 1)
-      }))
-    };
-
-    data.history = [item, ...(data.history || [])];
+    const item = addToHistory(data, date, normalList);
     data.guests = [];
 
     await writeData(data);
-    res.json({ item, guests: data.guests, history: data.history });
+
+    res.json({
+      item,
+      guests: data.guests,
+      vipGuests: data.vipGuests || [],
+      history: data.history
+    });
   } catch {
     res.status(500).json({ error: 'No se pudo cerrar la lista' });
+  }
+});
+
+app.post('/api/close-vip-list', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    const vipGuests = data.vipGuests || [];
+
+    if (!vipGuests.length) {
+      return res.status(400).json({ error: 'La lista VIP está vacía' });
+    }
+
+    const date = String(req.body.date || new Date().toISOString().slice(0, 10));
+    const vipList = vipGuests.map(g => normalizeClosedGuest(g, true));
+
+    const item = addToHistory(data, date, vipList);
+    data.vipGuests = [];
+
+    await writeData(data);
+
+    res.json({
+      item,
+      guests: data.guests || [],
+      vipGuests: data.vipGuests,
+      history: data.history
+    });
+  } catch {
+    res.status(500).json({ error: 'No se pudo cerrar la lista VIP' });
   }
 });
 
