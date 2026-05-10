@@ -210,3 +210,78 @@ body{
   font-weight:900;
   color:#fff;
 }
+
+.tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.tab{
+  height:52px;
+  border:none;
+  border-radius:18px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-weight:900;
+  font-size:16px;
+}
+
+.tab.active{
+  background:#fff;
+  color:#000;
+}
+
+.black-form{
+  display:grid;
+  gap:10px;
+}
+
+.black-form input{
+  width:100%;
+  height:58px;
+  border:none;
+  border-radius:20px;
+  padding:0 16px;
+  background:#313136;
+  color:#fff;
+  font-size:18px;
+}
+
+.black-form button{
+  width:100%;
+  height:58px;
+  border:none;
+  border-radius:22px;
+  background:#ff3b3b;
+  color:#fff;
+  font-size:18px;
+  font-weight:900;
+}
+
+.danger-card{
+  border-color:rgba(255,60,60,.25);
+}
+
+.black-row{
+  background:rgba(255,60,60,.12);
+  border:1px solid rgba(255,60,60,.2);
+}
+
+.black-alert{
+  border:1px solid rgba(255,60,60,.5);
+  background:rgba(255,60,60,.13);
+}
+
+.badge-danger{
+  display:inline-block;
+  margin-left:8px;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#ff3b3b;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  vertical-align:middle;
+}

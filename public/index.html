@@ -12,7 +12,7 @@
   <main class="wrap">
     <section id="pinCard" class="card pin-card hidden">
       <h2>Ingresar PIN</h2>
-      <input id="pinInput" placeholder="PIN" />
+      <input id="pinInput" placeholder="PIN" type="password" inputmode="numeric" />
       <button id="savePinBtn">Entrar</button>
     </section>
 
@@ -25,24 +25,46 @@
       </div>
     </section>
 
-    <section class="stats">
-      <div class="card stat"><div id="guestCount" class="num">0</div><div>Invitados</div></div>
-      <div class="card stat"><div id="peopleCount" class="num">0</div><div>Personas</div></div>
-      <div class="card stat"><div id="attendedCount" class="num">0</div><div>Asistieron</div></div>
-      <div class="card stat"><div id="pendingCount" class="num">0</div><div>Pendientes</div></div>
+    <section class="tabs">
+      <button id="btnGuestsTab" class="tab active">Invitados</button>
+      <button id="btnBlacklistTab" class="tab">Lista negra</button>
     </section>
 
-    <section class="card">
-      <form id="guestForm" class="guest-form">
-        <input id="nameInput" placeholder="Nombre del invitado" />
-        <input id="qtyInput" type="number" min="1" value="1" />
-        <button type="submit">Agregar</button>
-      </form>
+    <section id="guestPanel">
+      <section class="stats">
+        <div class="card stat"><div id="guestCount" class="num">0</div><div>Invitados</div></div>
+        <div class="card stat"><div id="peopleCount" class="num">0</div><div>Personas</div></div>
+        <div class="card stat"><div id="attendedCount" class="num">0</div><div>Ingresaron</div></div>
+        <div class="card stat"><div id="pendingCount" class="num">0</div><div>Pendientes</div></div>
+      </section>
+
+      <section class="card">
+        <form id="guestForm" class="guest-form">
+          <input id="nameInput" placeholder="Nombre del invitado" autocomplete="off" />
+          <input id="qtyInput" type="number" min="1" value="1" />
+          <button type="submit">Agregar</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <input id="searchInput" class="search" placeholder="Buscar invitado..." />
+        <div id="list" class="list"></div>
+      </section>
     </section>
 
-    <section class="card">
-      <input id="searchInput" class="search" placeholder="Buscar invitado..." />
-      <div id="list" class="list"></div>
+    <section id="blacklistPanel" class="hidden">
+      <section class="card">
+        <form id="blackForm" class="black-form">
+          <input id="blackNameInput" placeholder="Nombre para lista negra" autocomplete="off" />
+          <input id="blackNoteInput" placeholder="Motivo / nota opcional" autocomplete="off" />
+          <button type="submit">Agregar a lista negra</button>
+        </form>
+      </section>
+
+      <section class="card danger-card">
+        <input id="blackSearchInput" class="search" placeholder="Buscar en lista negra..." />
+        <div id="blackList" class="list"></div>
+      </section>
     </section>
   </main>
 

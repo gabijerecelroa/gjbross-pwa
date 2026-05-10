@@ -1,4 +1,4 @@
-const CACHE = 'conexion-v5';
+const CACHE = 'conexion-v6';
 const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/manifest.json', '/logo.jpg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
