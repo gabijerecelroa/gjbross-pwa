@@ -28,6 +28,7 @@
     <section class="tabs">
       <button id="btnGuestsTab" class="tab active">Invitados</button>
       <button id="btnBlacklistTab" class="tab">Lista negra</button>
+      <button id="btnHistoryTab" class="tab">Historial</button>
     </section>
 
     <section id="guestPanel">
@@ -36,6 +37,12 @@
         <div class="card stat"><div id="peopleCount" class="num">0</div><div>Personas</div></div>
         <div class="card stat"><div id="attendedCount" class="num">0</div><div>Ingresaron</div></div>
         <div class="card stat"><div id="pendingCount" class="num">0</div><div>Pendientes</div></div>
+      </section>
+
+      <section class="card close-card">
+        <div class="close-title">Cerrar lista del día</div>
+        <input id="closeDateInput" type="date" />
+        <button id="closeListBtn" type="button">Cerrar lista y guardar historial</button>
       </section>
 
       <section class="card">
@@ -64,6 +71,13 @@
       <section class="card danger-card">
         <input id="blackSearchInput" class="search" placeholder="Buscar en lista negra..." />
         <div id="blackList" class="list"></div>
+      </section>
+    </section>
+
+    <section id="historyPanel" class="hidden">
+      <section class="card">
+        <input id="historySearchInput" class="search" placeholder="Buscar por fecha o nombre..." />
+        <div id="historyList" class="list"></div>
       </section>
     </section>
   </main>

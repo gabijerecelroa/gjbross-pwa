@@ -285,3 +285,91 @@ body{
   font-weight:900;
   vertical-align:middle;
 }
+
+.tabs{
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+}
+
+.close-card{
+  border-color:rgba(255,255,255,.14);
+}
+
+.close-title{
+  font-size:18px;
+  font-weight:900;
+  margin-bottom:10px;
+}
+
+#closeDateInput{
+  width:100%;
+  height:54px;
+  border:none;
+  border-radius:18px;
+  padding:0 14px;
+  background:#313136;
+  color:#fff;
+  font-size:17px;
+  margin-bottom:10px;
+}
+
+#closeListBtn{
+  width:100%;
+  height:56px;
+  border:none;
+  border-radius:20px;
+  background:#ffcc00;
+  color:#000;
+  font-size:17px;
+  font-weight:900;
+}
+
+.history-card{
+  padding:14px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  margin-bottom:12px;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.history-date{
+  font-size:22px;
+  font-weight:900;
+  margin-bottom:4px;
+}
+
+.history-guests{
+  margin-top:12px;
+  display:grid;
+  gap:8px;
+}
+
+.history-line{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px;
+  border-radius:14px;
+  background:rgba(0,0,0,.24);
+}
+
+.history-line span{
+  color:#cfcfcf;
+  text-align:right;
+}
+
+@media(max-width:480px){
+  .tab{
+    font-size:13px;
+    height:48px;
+  }
+
+  .history-line{
+    display:block;
+  }
+
+  .history-line span{
+    display:block;
+    text-align:left;
+    margin-top:4px;
+  }
+}

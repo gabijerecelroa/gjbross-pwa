@@ -29,17 +29,16 @@ async function readData() {
   const { data } = await octokit.gists.get({ gist_id: GIST_ID });
   const file = data.files?.[GIST_FILENAME];
 
-  let parsed = { guests: [], blacklist: [] };
+  let parsed = { guests: [], blacklist: [], history: [] };
 
   if (file?.content) {
-    try {
-      parsed = JSON.parse(file.content);
-    } catch {}
+    try { parsed = JSON.parse(file.content); } catch {}
   }
 
   return {
     guests: parsed.guests || [],
-    blacklist: parsed.blacklist || []
+    blacklist: parsed.blacklist || [],
+    history: parsed.history || []
   };
 }
 
@@ -50,7 +49,8 @@ async function writeData(data) {
       [GIST_FILENAME]: {
         content: JSON.stringify({
           guests: data.guests || [],
-          blacklist: data.blacklist || []
+          blacklist: data.blacklist || [],
+          history: data.history || []
         }, null, 2)
       }
     }
@@ -124,6 +124,53 @@ app.delete('/api/guests/:id', requirePin, async (req, res) => {
     res.json({ guests: data.guests });
   } catch {
     res.status(500).json({ error: 'No se pudo borrar invitado' });
+  }
+});
+
+app.post('/api/close-list', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    const guests = data.guests || [];
+
+    if (!guests.length) {
+      return res.status(400).json({ error: 'La lista está vacía' });
+    }
+
+    const date = String(req.body.date || new Date().toISOString().slice(0, 10));
+
+    const item = {
+      id: crypto.randomUUID(),
+      date,
+      closedAt: new Date().toISOString(),
+      guests: guests.map(g => ({
+        ...g,
+        qty: Math.max(1, Number(g.qty || 1)),
+        entered: Math.max(0, Number(g.entered || 0)),
+        attended: Number(g.entered || 0) >= Number(g.qty || 1)
+      }))
+    };
+
+    data.history = [item, ...(data.history || [])];
+    data.guests = [];
+
+    await writeData(data);
+
+    res.json({
+      item,
+      guests: data.guests,
+      history: data.history
+    });
+  } catch {
+    res.status(500).json({ error: 'No se pudo cerrar la lista' });
+  }
+});
+
+app.get('/api/history', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    res.json({ history: data.history || [] });
+  } catch {
+    res.status(500).json({ error: 'No se pudo leer el historial' });
   }
 });
 

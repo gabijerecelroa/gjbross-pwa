@@ -2,12 +2,16 @@ const $ = (id) => document.getElementById(id);
 
 const GUEST_CACHE = 'conexion_guests_cache';
 const BLACK_CACHE = 'conexion_blacklist_cache';
+const HISTORY_CACHE = 'conexion_history_cache';
 
 let guests = loadCache(GUEST_CACHE);
 let blacklist = loadCache(BLACK_CACHE);
+let history = loadCache(HISTORY_CACHE);
 let pin = localStorage.getItem('gjbross_pin') || '';
 
 $('pinInput').value = pin;
+$('closeDateInput').value = today();
+
 if (pin) $('pinCard').classList.add('hidden');
 else $('pinCard').classList.remove('hidden');
 
@@ -20,16 +24,22 @@ $('savePinBtn').onclick = () => {
 
 $('btnGuestsTab').onclick = () => showTab('guests');
 $('btnBlacklistTab').onclick = () => showTab('blacklist');
+$('btnHistoryTab').onclick = () => showTab('history');
+$('closeListBtn').onclick = closeList;
 
 function showTab(tab) {
-  const isBlack = tab === 'blacklist';
+  const black = tab === 'blacklist';
+  const hist = tab === 'history';
 
-  $('guestPanel').classList.toggle('hidden', isBlack);
-  $('blacklistPanel').classList.toggle('hidden', !isBlack);
-  $('btnGuestsTab').classList.toggle('active', !isBlack);
-  $('btnBlacklistTab').classList.toggle('active', isBlack);
+  $('guestPanel').classList.toggle('hidden', black || hist);
+  $('blacklistPanel').classList.toggle('hidden', !black);
+  $('historyPanel').classList.toggle('hidden', !hist);
 
-  if (isBlack && !pin) $('pinCard').classList.remove('hidden');
+  $('btnGuestsTab').classList.toggle('active', tab === 'guests');
+  $('btnBlacklistTab').classList.toggle('active', black);
+  $('btnHistoryTab').classList.toggle('active', hist);
+
+  if ((black || hist) && !pin) $('pinCard').classList.remove('hidden');
 }
 
 function loadCache(key) {
@@ -40,6 +50,7 @@ function loadCache(key) {
 function saveCache() {
   localStorage.setItem(GUEST_CACHE, JSON.stringify(guests));
   localStorage.setItem(BLACK_CACHE, JSON.stringify(blacklist));
+  localStorage.setItem(HISTORY_CACHE, JSON.stringify(history));
 }
 
 async function api(path, options = {}) {
@@ -70,14 +81,18 @@ async function load() {
     try {
       const dataBlack = await api('/api/blacklist?t=' + Date.now());
       blacklist = dataBlack.blacklist || [];
-    } catch {
-      if (!blacklist.length) $('blackList').innerHTML = `<div class="empty">No se pudo cargar la lista negra.</div>`;
-    }
+    } catch {}
+
+    try {
+      const dataHistory = await api('/api/history?t=' + Date.now());
+      history = dataHistory.history || [];
+    } catch {}
   }
 
   saveCache();
   render();
   renderBlacklist();
+  renderHistory();
 }
 
 function normalizeGuest(g) {
@@ -96,11 +111,7 @@ function isBlacklisted(name) {
 }
 
 function normalizeText(text) {
-  return String(text || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+  return String(text || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 $('guestForm').onsubmit = async (e) => {
@@ -135,6 +146,33 @@ $('guestForm').onsubmit = async (e) => {
   }
 };
 
+async function closeList() {
+  if (!pin) return alert('Primero coloca el PIN');
+  if (!guests.length) return alert('La lista está vacía');
+
+  const date = $('closeDateInput').value || today();
+
+  const ok = confirm('Cerrar la lista de ' + formatDate(date) + '? Se guardará en historial y se vaciará la lista actual.');
+  if (!ok) return;
+
+  try {
+    const data = await api('/api/close-list', {
+      method: 'POST',
+      body: JSON.stringify({ date })
+    });
+
+    guests = (data.guests || []).map(normalizeGuest);
+    history = data.history || [];
+
+    saveCache();
+    render();
+    renderHistory();
+    alert('Lista cerrada y guardada en historial.');
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
 $('blackForm').onsubmit = async (e) => {
   e.preventDefault();
 
@@ -164,6 +202,7 @@ $('blackForm').onsubmit = async (e) => {
 
 $('searchInput').oninput = render;
 $('blackSearchInput').oninput = renderBlacklist;
+$('historySearchInput').oninput = renderHistory;
 
 async function setEntered(id, value) {
   const guest = guests.find(g => g.id === id);
@@ -240,21 +279,15 @@ function render() {
     return `
       <div class="row ${done ? 'done' : ''} ${black ? 'black-alert' : ''}">
         <button class="check" onclick="toggle('${g.id}')">${done ? '✓' : '○'}</button>
-
         <div class="info">
-          <div class="name">
-            ${escapeHtml(g.name)}
-            ${black ? '<span class="badge-danger">LISTA NEGRA</span>' : ''}
-          </div>
+          <div class="name">${escapeHtml(g.name)} ${black ? '<span class="badge-danger">LISTA NEGRA</span>' : ''}</div>
           <div class="sub">Total ${qty} · Ingresaron ${entered} · Pendientes ${pending}</div>
-
           <div class="entry-controls">
             <button onclick="setEntered('${g.id}', ${entered - 1})">-</button>
             <span>${entered}/${qty}</span>
             <button onclick="setEntered('${g.id}', ${entered + 1})">+</button>
           </div>
         </div>
-
         <button class="delete" onclick="removeGuest('${g.id}')">×</button>
       </div>
     `;
@@ -279,6 +312,63 @@ function renderBlacklist() {
   `).join('') : `<div class="empty">No hay personas en lista negra.</div>`;
 }
 
+function renderHistory() {
+  const q = $('historySearchInput').value.trim().toLowerCase();
+
+  const filtered = history.filter(h => {
+    const byDate = String(h.date || '').toLowerCase().includes(q);
+    const byGuest = (h.guests || []).some(g => String(g.name || '').toLowerCase().includes(q));
+    return byDate || byGuest;
+  });
+
+  $('historyList').innerHTML = filtered.length ? filtered.map(h => {
+    const list = (h.guests || []).map(normalizeGuest);
+    const people = list.reduce((s, g) => s + Number(g.qty || 0), 0);
+    const entered = list.reduce((s, g) => s + Number(g.entered || 0), 0);
+    const pending = people - entered;
+
+    return `
+      <div class="history-card">
+        <div class="history-head">
+          <div class="history-date">${formatDate(h.date)}</div>
+          <div class="sub">Invitados ${list.length} · Personas ${people} · Ingresaron ${entered} · No ingresaron ${pending}</div>
+        </div>
+
+        <div class="history-guests">
+          ${list.map(g => {
+            const qty = Number(g.qty || 1);
+            const ent = Number(g.entered || 0);
+            const pend = qty - ent;
+            const status = ent === 0 ? 'No vino' : ent >= qty ? 'Vino' : 'Parcial';
+
+            return `
+              <div class="history-line">
+                <strong>${escapeHtml(g.name)}</strong>
+                <span>${status} · ${ent}/${qty} · Pendientes ${pend}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('') : `<div class="empty">No hay historial todavía.</div>`;
+}
+
+function today() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatDate(date) {
+  if (!date) return 'Sin fecha';
+  const [y, m, d] = String(date).split('-');
+  if (!y || !m || !d) return date;
+  return `${d}/${m}/${y}`;
+}
+
 function escapeHtml(text) {
   return String(text).replace(/[&<>"]/g, m => ({
     '&':'&amp;',
@@ -292,9 +382,12 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
 if (guests.length) render();
 if (blacklist.length) renderBlacklist();
+if (history.length) renderHistory();
 
 load();
-setInterval(() => load(), 15000);
+setInterval(() => load(), 3000);
+window.addEventListener('focus', () => load());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
 
 window.toggle = toggle;
 window.removeGuest = removeGuest;
