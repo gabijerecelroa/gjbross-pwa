@@ -536,7 +536,7 @@ function renderHistory() {
               <div class="history-line ${g.vip ? 'history-vip-line' : ''}">
                 <div class="history-line-head">
                   <strong class="history-name">${escapeHtml(g.name)}</strong>
-                  ${g.vip ? '<span class="vip-badge-inline">⭐ VIP</span>' : ''}
+                  ${g.vip ? '<span class="vip-badge-inline">VIP 👑</span>' : ''}
                 </div>
                 <span>${status} · ${ent}/${qty} · Pendientes ${pend}</span>
               </div>
