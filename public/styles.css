@@ -468,3 +468,32 @@ body{
   border:1px solid rgba(255,204,0,.25);
   background:rgba(255,204,0,.08);
 }
+
+.history-line-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:4px;
+  flex-wrap:wrap;
+}
+
+.history-name{
+  margin:0;
+}
+
+.vip-badge-inline{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#ffcc00;
+  color:#000;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+}
+
+.vip-badge{
+  display:none !important;
+}
