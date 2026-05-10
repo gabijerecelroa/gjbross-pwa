@@ -373,3 +373,29 @@ body{
     margin-top:4px;
   }
 }
+
+.history-toggle{
+  width:100%;
+  border:none;
+  background:transparent;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  text-align:left;
+  padding:0;
+}
+
+.history-plus{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  background:#fff;
+  color:#000;
+  display:grid;
+  place-items:center;
+  font-size:30px;
+  font-weight:900;
+  flex:0 0 42px;
+}

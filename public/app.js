@@ -7,6 +7,7 @@ const HISTORY_CACHE = 'conexion_history_cache';
 let guests = loadCache(GUEST_CACHE);
 let blacklist = loadCache(BLACK_CACHE);
 let history = loadCache(HISTORY_CACHE);
+let openHistory = new Set();
 let pin = localStorage.getItem('gjbross_pin') || '';
 
 $('pinInput').value = pin;
@@ -326,15 +327,19 @@ function renderHistory() {
     const people = list.reduce((s, g) => s + Number(g.qty || 0), 0);
     const entered = list.reduce((s, g) => s + Number(g.entered || 0), 0);
     const pending = people - entered;
+    const isOpen = openHistory.has(h.id);
 
     return `
       <div class="history-card">
-        <div class="history-head">
-          <div class="history-date">${formatDate(h.date)}</div>
-          <div class="sub">Invitados ${list.length} · Personas ${people} · Ingresaron ${entered} · No ingresaron ${pending}</div>
-        </div>
+        <button class="history-toggle" onclick="toggleHistory('${h.id}')">
+          <div>
+            <div class="history-date">${formatDate(h.date)}</div>
+            <div class="sub">Invitados ${list.length} · Personas ${people} · Ingresaron ${entered} · No ingresaron ${pending}</div>
+          </div>
+          <span class="history-plus">${isOpen ? '−' : '+'}</span>
+        </button>
 
-        <div class="history-guests">
+        <div class="history-guests ${isOpen ? '' : 'hidden'}">
           ${list.map(g => {
             const qty = Number(g.qty || 1);
             const ent = Number(g.entered || 0);
@@ -352,6 +357,12 @@ function renderHistory() {
       </div>
     `;
   }).join('') : `<div class="empty">No hay historial todavía.</div>`;
+}
+
+function toggleHistory(id) {
+  if (openHistory.has(id)) openHistory.delete(id);
+  else openHistory.add(id);
+  renderHistory();
 }
 
 function today() {
@@ -393,3 +404,4 @@ window.toggle = toggle;
 window.removeGuest = removeGuest;
 window.setEntered = setEntered;
 window.removeBlack = removeBlack;
+window.toggleHistory = toggleHistory;
