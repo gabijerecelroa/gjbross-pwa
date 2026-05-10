@@ -36,19 +36,16 @@ $('clearHistoryBtn').onclick = clearHistory;
 
 $('refreshBtn').onclick = async () => {
   const btn = $('refreshBtn');
-  const oldText = btn.textContent;
-
   btn.disabled = true;
   btn.textContent = 'Actualizando...';
 
-  await load();
-
-  btn.textContent = 'Actualizado ✓';
+  try {
+    await load();
+  } catch {}
 
   setTimeout(() => {
-    btn.textContent = oldText;
-    btn.disabled = false;
-  }, 1200);
+    window.location.href = '/?refresh=' + Date.now();
+  }, 300);
 };
 
 function showTab(tab) {
