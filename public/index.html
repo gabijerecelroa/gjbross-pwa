@@ -27,6 +27,7 @@
 
     <section class="tabs">
       <button id="btnGuestsTab" class="tab active">Invitados</button>
+      <button id="btnVipTab" class="tab">Invitados VIP</button>
       <button id="btnBlacklistTab" class="tab">Lista negra</button>
       <button id="btnHistoryTab" class="tab">Historial</button>
     </section>
@@ -56,6 +57,28 @@
       <section class="card">
         <input id="searchInput" class="search" placeholder="Buscar invitado..." />
         <div id="list" class="list"></div>
+      </section>
+    </section>
+
+    <section id="vipPanel" class="hidden">
+      <section class="stats">
+        <div class="card stat"><div id="vipGuestCount" class="num">0</div><div>VIP</div></div>
+        <div class="card stat"><div id="vipPeopleCount" class="num">0</div><div>Personas</div></div>
+        <div class="card stat"><div id="vipAttendedCount" class="num">0</div><div>Ingresaron</div></div>
+        <div class="card stat"><div id="vipPendingCount" class="num">0</div><div>Pendientes</div></div>
+      </section>
+
+      <section class="card vip-card">
+        <form id="vipForm" class="guest-form">
+          <input id="vipNameInput" placeholder="Nombre del invitado VIP" autocomplete="off" />
+          <input id="vipQtyInput" type="number" min="1" value="1" />
+          <button type="submit">Agregar VIP</button>
+        </form>
+      </section>
+
+      <section class="card vip-card">
+        <input id="vipSearchInput" class="search" placeholder="Buscar VIP..." />
+        <div id="vipList" class="list"></div>
       </section>
     </section>
 

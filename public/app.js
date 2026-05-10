@@ -1,10 +1,12 @@
 const $ = (id) => document.getElementById(id);
 
 const GUEST_CACHE = 'conexion_guests_cache';
+const VIP_CACHE = 'conexion_vip_cache';
 const BLACK_CACHE = 'conexion_blacklist_cache';
 const HISTORY_CACHE = 'conexion_history_cache';
 
 let guests = loadCache(GUEST_CACHE);
+let vipGuests = loadCache(VIP_CACHE);
 let blacklist = loadCache(BLACK_CACHE);
 let history = loadCache(HISTORY_CACHE);
 let openHistory = new Set();
@@ -24,24 +26,28 @@ $('savePinBtn').onclick = () => {
 };
 
 $('btnGuestsTab').onclick = () => showTab('guests');
+$('btnVipTab').onclick = () => showTab('vip');
 $('btnBlacklistTab').onclick = () => showTab('blacklist');
 $('btnHistoryTab').onclick = () => showTab('history');
 $('closeListBtn').onclick = closeList;
 $('clearHistoryBtn').onclick = clearHistory;
 
 function showTab(tab) {
+  const vip = tab === 'vip';
   const black = tab === 'blacklist';
   const hist = tab === 'history';
 
-  $('guestPanel').classList.toggle('hidden', black || hist);
+  $('guestPanel').classList.toggle('hidden', vip || black || hist);
+  $('vipPanel').classList.toggle('hidden', !vip);
   $('blacklistPanel').classList.toggle('hidden', !black);
   $('historyPanel').classList.toggle('hidden', !hist);
 
   $('btnGuestsTab').classList.toggle('active', tab === 'guests');
+  $('btnVipTab').classList.toggle('active', vip);
   $('btnBlacklistTab').classList.toggle('active', black);
   $('btnHistoryTab').classList.toggle('active', hist);
 
-  if ((black || hist) && !pin) $('pinCard').classList.remove('hidden');
+  if ((vip || black || hist) && !pin) $('pinCard').classList.remove('hidden');
 }
 
 function loadCache(key) {
@@ -51,6 +57,7 @@ function loadCache(key) {
 
 function saveCache() {
   localStorage.setItem(GUEST_CACHE, JSON.stringify(guests));
+  localStorage.setItem(VIP_CACHE, JSON.stringify(vipGuests));
   localStorage.setItem(BLACK_CACHE, JSON.stringify(blacklist));
   localStorage.setItem(HISTORY_CACHE, JSON.stringify(history));
 }
@@ -81,6 +88,13 @@ async function load() {
 
   if (pin) {
     try {
+      const dataVip = await api('/api/vip-guests?t=' + Date.now());
+      vipGuests = (dataVip.vipGuests || []).map(normalizeGuest);
+    } catch {
+      if (!vipGuests.length) $('vipList').innerHTML = `<div class="empty">No se pudo cargar VIP.</div>`;
+    }
+
+    try {
       const dataBlack = await api('/api/blacklist?t=' + Date.now());
       blacklist = dataBlack.blacklist || [];
     } catch {}
@@ -92,7 +106,8 @@ async function load() {
   }
 
   saveCache();
-  render();
+  renderGuests();
+  renderVip();
   renderBlacklist();
   renderHistory();
 }
@@ -142,7 +157,39 @@ $('guestForm').onsubmit = async (e) => {
     $('nameInput').value = '';
     $('qtyInput').value = 1;
 
-    render();
+    renderGuests();
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+$('vipForm').onsubmit = async (e) => {
+  e.preventDefault();
+
+  const name = $('vipNameInput').value.trim();
+  const qty = Math.max(1, Number($('vipQtyInput').value || 1));
+
+  if (!pin) return alert('Primero coloca el PIN');
+  if (!name) return;
+
+  if (isBlacklisted(name)) {
+    const ok = confirm('ATENCIÓN: esta persona está en LISTA NEGRA. ¿Igual quieres agregarla como VIP?');
+    if (!ok) return;
+  }
+
+  try {
+    const data = await api('/api/vip-guests', {
+      method: 'POST',
+      body: JSON.stringify({ name, qty, entered: 0, attended: false })
+    });
+
+    vipGuests = (data.vipGuests || []).map(normalizeGuest);
+    saveCache();
+
+    $('vipNameInput').value = '';
+    $('vipQtyInput').value = 1;
+
+    renderVip();
   } catch (e) {
     alert(e.message);
   }
@@ -167,7 +214,7 @@ async function closeList() {
     history = data.history || [];
 
     saveCache();
-    render();
+    renderGuests();
     renderHistory();
     alert('Lista cerrada y guardada en historial.');
   } catch (e) {
@@ -220,7 +267,8 @@ $('blackForm').onsubmit = async (e) => {
   }
 };
 
-$('searchInput').oninput = render;
+$('searchInput').oninput = renderGuests;
+$('vipSearchInput').oninput = renderVip;
 $('blackSearchInput').oninput = renderBlacklist;
 $('historySearchInput').oninput = renderHistory;
 
@@ -233,15 +281,29 @@ async function setEntered(id, value) {
 
   const data = await api(`/api/guests/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify({
-      entered,
-      attended: entered >= qty
-    })
+    body: JSON.stringify({ entered, attended: entered >= qty })
   });
 
   guests = (data.guests || []).map(normalizeGuest);
   saveCache();
-  render();
+  renderGuests();
+}
+
+async function setVipEntered(id, value) {
+  const guest = vipGuests.find(g => g.id === id);
+  if (!guest) return;
+
+  const qty = Math.max(1, Number(guest.qty || 1));
+  const entered = Math.max(0, Math.min(qty, Number(value || 0)));
+
+  const data = await api(`/api/vip-guests/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ entered, attended: entered >= qty })
+  });
+
+  vipGuests = (data.vipGuests || []).map(normalizeGuest);
+  saveCache();
+  renderVip();
 }
 
 async function toggle(id) {
@@ -254,6 +316,16 @@ async function toggle(id) {
   await setEntered(id, entered);
 }
 
+async function toggleVip(id) {
+  const guest = vipGuests.find(g => g.id === id);
+  if (!guest) return;
+
+  const qty = Math.max(1, Number(guest.qty || 1));
+  const entered = Number(guest.entered || 0) >= qty ? 0 : qty;
+
+  await setVipEntered(id, entered);
+}
+
 async function removeGuest(id) {
   if (!confirm('Borrar invitado?')) return;
 
@@ -261,7 +333,17 @@ async function removeGuest(id) {
   guests = (data.guests || []).map(normalizeGuest);
 
   saveCache();
-  render();
+  renderGuests();
+}
+
+async function removeVip(id) {
+  if (!confirm('Borrar invitado VIP?')) return;
+
+  const data = await api(`/api/vip-guests/${id}`, { method: 'DELETE' });
+  vipGuests = (data.vipGuests || []).map(normalizeGuest);
+
+  saveCache();
+  renderVip();
 }
 
 async function removeBlack(id) {
@@ -274,11 +356,37 @@ async function removeBlack(id) {
   renderBlacklist();
 }
 
-function render() {
-  guests = guests.map(normalizeGuest);
+function renderList(items, opts) {
+  const q = $(opts.searchId).value.trim().toLowerCase();
+  const filtered = items.filter(g => g.name.toLowerCase().includes(q));
 
-  const q = $('searchInput').value.trim().toLowerCase();
-  const filtered = guests.filter(g => g.name.toLowerCase().includes(q));
+  $(opts.listId).innerHTML = filtered.length ? filtered.map(g => {
+    const qty = Number(g.qty || 1);
+    const entered = Number(g.entered || 0);
+    const pending = qty - entered;
+    const done = entered >= qty;
+    const black = isBlacklisted(g.name);
+
+    return `
+      <div class="row ${done ? 'done' : ''} ${black ? 'black-alert' : ''} ${opts.vip ? 'vip-row' : ''}">
+        <button class="check" onclick="${opts.toggleFn}('${g.id}')">${done ? '✓' : '○'}</button>
+        <div class="info">
+          <div class="name">${escapeHtml(g.name)} ${black ? '<span class="badge-danger">LISTA NEGRA</span>' : ''}</div>
+          <div class="sub">Total ${qty} · Ingresaron ${entered} · Pendientes ${pending}</div>
+          <div class="entry-controls">
+            <button onclick="${opts.setFn}('${g.id}', ${entered - 1})">-</button>
+            <span>${entered}/${qty}</span>
+            <button onclick="${opts.setFn}('${g.id}', ${entered + 1})">+</button>
+          </div>
+        </div>
+        <button class="delete" onclick="${opts.removeFn}('${g.id}')">×</button>
+      </div>
+    `;
+  }).join('') : `<div class="empty">${opts.empty}</div>`;
+}
+
+function renderGuests() {
+  guests = guests.map(normalizeGuest);
 
   const people = guests.reduce((s, g) => s + Number(g.qty || 0), 0);
   const enteredPeople = guests.reduce((s, g) => s + Number(g.entered || 0), 0);
@@ -289,29 +397,37 @@ function render() {
   $('attendedCount').textContent = enteredPeople;
   $('pendingCount').textContent = pendingPeople;
 
-  $('list').innerHTML = filtered.length ? filtered.map(g => {
-    const qty = Number(g.qty || 1);
-    const entered = Number(g.entered || 0);
-    const pending = qty - entered;
-    const done = entered >= qty;
-    const black = isBlacklisted(g.name);
+  renderList(guests, {
+    searchId: 'searchInput',
+    listId: 'list',
+    toggleFn: 'toggle',
+    setFn: 'setEntered',
+    removeFn: 'removeGuest',
+    empty: 'No hay invitados.'
+  });
+}
 
-    return `
-      <div class="row ${done ? 'done' : ''} ${black ? 'black-alert' : ''}">
-        <button class="check" onclick="toggle('${g.id}')">${done ? '✓' : '○'}</button>
-        <div class="info">
-          <div class="name">${escapeHtml(g.name)} ${black ? '<span class="badge-danger">LISTA NEGRA</span>' : ''}</div>
-          <div class="sub">Total ${qty} · Ingresaron ${entered} · Pendientes ${pending}</div>
-          <div class="entry-controls">
-            <button onclick="setEntered('${g.id}', ${entered - 1})">-</button>
-            <span>${entered}/${qty}</span>
-            <button onclick="setEntered('${g.id}', ${entered + 1})">+</button>
-          </div>
-        </div>
-        <button class="delete" onclick="removeGuest('${g.id}')">×</button>
-      </div>
-    `;
-  }).join('') : `<div class="empty">No hay invitados.</div>`;
+function renderVip() {
+  vipGuests = vipGuests.map(normalizeGuest);
+
+  const people = vipGuests.reduce((s, g) => s + Number(g.qty || 0), 0);
+  const enteredPeople = vipGuests.reduce((s, g) => s + Number(g.entered || 0), 0);
+  const pendingPeople = people - enteredPeople;
+
+  $('vipGuestCount').textContent = vipGuests.length;
+  $('vipPeopleCount').textContent = people;
+  $('vipAttendedCount').textContent = enteredPeople;
+  $('vipPendingCount').textContent = pendingPeople;
+
+  renderList(vipGuests, {
+    searchId: 'vipSearchInput',
+    listId: 'vipList',
+    toggleFn: 'toggleVip',
+    setFn: 'setVipEntered',
+    removeFn: 'removeVip',
+    empty: 'No hay invitados VIP.',
+    vip: true
+  });
 }
 
 function renderBlacklist() {
@@ -410,7 +526,8 @@ function escapeHtml(text) {
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
-if (guests.length) render();
+if (guests.length) renderGuests();
+if (vipGuests.length) renderVip();
 if (blacklist.length) renderBlacklist();
 if (history.length) renderHistory();
 
@@ -422,5 +539,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) load
 window.toggle = toggle;
 window.removeGuest = removeGuest;
 window.setEntered = setEntered;
+window.toggleVip = toggleVip;
+window.removeVip = removeVip;
+window.setVipEntered = setVipEntered;
 window.removeBlack = removeBlack;
 window.toggleHistory = toggleHistory;

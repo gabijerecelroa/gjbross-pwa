@@ -29,7 +29,7 @@ async function readData() {
   const { data } = await octokit.gists.get({ gist_id: GIST_ID });
   const file = data.files?.[GIST_FILENAME];
 
-  let parsed = { guests: [], blacklist: [], history: [] };
+  let parsed = { guests: [], vipGuests: [], blacklist: [], history: [] };
 
   if (file?.content) {
     try { parsed = JSON.parse(file.content); } catch {}
@@ -37,6 +37,7 @@ async function readData() {
 
   return {
     guests: parsed.guests || [],
+    vipGuests: parsed.vipGuests || [],
     blacklist: parsed.blacklist || [],
     history: parsed.history || []
   };
@@ -49,12 +50,28 @@ async function writeData(data) {
       [GIST_FILENAME]: {
         content: JSON.stringify({
           guests: data.guests || [],
+          vipGuests: data.vipGuests || [],
           blacklist: data.blacklist || [],
           history: data.history || []
         }, null, 2)
       }
     }
   });
+}
+
+function makeGuest(body) {
+  const name = String(body.name || '').trim();
+  const qty = Math.max(1, Number(body.qty || 1));
+  if (!name) return null;
+
+  return {
+    id: crypto.randomUUID(),
+    name,
+    qty,
+    entered: 0,
+    attended: false,
+    createdAt: new Date().toISOString()
+  };
 }
 
 app.get('/api/health', (req, res) => res.json({ ok: true, app: 'CONEXION' }));
@@ -70,21 +87,10 @@ app.get('/api/guests', async (req, res) => {
 
 app.post('/api/guests', requirePin, async (req, res) => {
   try {
-    const name = String(req.body.name || '').trim();
-    const qty = Math.max(1, Number(req.body.qty || 1));
-    if (!name) return res.status(400).json({ error: 'Falta nombre' });
+    const guest = makeGuest(req.body);
+    if (!guest) return res.status(400).json({ error: 'Falta nombre' });
 
     const data = await readData();
-
-    const guest = {
-      id: crypto.randomUUID(),
-      name,
-      qty,
-      entered: 0,
-      attended: false,
-      createdAt: new Date().toISOString()
-    };
-
     data.guests = [guest, ...(data.guests || [])];
 
     await writeData(data);
@@ -127,14 +133,69 @@ app.delete('/api/guests/:id', requirePin, async (req, res) => {
   }
 });
 
+app.get('/api/vip-guests', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    res.json({ vipGuests: data.vipGuests || [] });
+  } catch {
+    res.status(500).json({ error: 'No se pudo leer invitados VIP' });
+  }
+});
+
+app.post('/api/vip-guests', requirePin, async (req, res) => {
+  try {
+    const guest = makeGuest(req.body);
+    if (!guest) return res.status(400).json({ error: 'Falta nombre' });
+
+    const data = await readData();
+    data.vipGuests = [guest, ...(data.vipGuests || [])];
+
+    await writeData(data);
+    res.json({ guest, vipGuests: data.vipGuests });
+  } catch {
+    res.status(500).json({ error: 'No se pudo agregar invitado VIP' });
+  }
+});
+
+app.patch('/api/vip-guests/:id', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    let updated = null;
+
+    data.vipGuests = (data.vipGuests || []).map((g) => {
+      if (g.id !== req.params.id) return g;
+      updated = { ...g, ...req.body, id: g.id };
+      delete updated.pin;
+      return updated;
+    });
+
+    if (!updated) return res.status(404).json({ error: 'Invitado VIP no encontrado' });
+
+    await writeData(data);
+    res.json({ guest: updated, vipGuests: data.vipGuests });
+  } catch {
+    res.status(500).json({ error: 'No se pudo actualizar invitado VIP' });
+  }
+});
+
+app.delete('/api/vip-guests/:id', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    data.vipGuests = (data.vipGuests || []).filter((g) => g.id !== req.params.id);
+
+    await writeData(data);
+    res.json({ vipGuests: data.vipGuests });
+  } catch {
+    res.status(500).json({ error: 'No se pudo borrar invitado VIP' });
+  }
+});
+
 app.post('/api/close-list', requirePin, async (req, res) => {
   try {
     const data = await readData();
     const guests = data.guests || [];
 
-    if (!guests.length) {
-      return res.status(400).json({ error: 'La lista está vacía' });
-    }
+    if (!guests.length) return res.status(400).json({ error: 'La lista está vacía' });
 
     const date = String(req.body.date || new Date().toISOString().slice(0, 10));
 
@@ -154,12 +215,7 @@ app.post('/api/close-list', requirePin, async (req, res) => {
     data.guests = [];
 
     await writeData(data);
-
-    res.json({
-      item,
-      guests: data.guests,
-      history: data.history
-    });
+    res.json({ item, guests: data.guests, history: data.history });
   } catch {
     res.status(500).json({ error: 'No se pudo cerrar la lista' });
   }
