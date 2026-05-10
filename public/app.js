@@ -27,6 +27,7 @@ $('btnGuestsTab').onclick = () => showTab('guests');
 $('btnBlacklistTab').onclick = () => showTab('blacklist');
 $('btnHistoryTab').onclick = () => showTab('history');
 $('closeListBtn').onclick = closeList;
+$('clearHistoryBtn').onclick = clearHistory;
 
 function showTab(tab) {
   const black = tab === 'blacklist';
@@ -169,6 +170,24 @@ async function closeList() {
     render();
     renderHistory();
     alert('Lista cerrada y guardada en historial.');
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function clearHistory() {
+  if (!pin) return alert('Primero coloca el PIN');
+  if (!history.length) return alert('No hay historial para borrar');
+
+  const ok = confirm('¿Seguro quieres borrar TODO el historial? Esta acción no se puede deshacer.');
+  if (!ok) return;
+
+  try {
+    const data = await api('/api/history', { method: 'DELETE' });
+    history = data.history || [];
+    saveCache();
+    renderHistory();
+    alert('Historial borrado.');
   } catch (e) {
     alert(e.message);
   }

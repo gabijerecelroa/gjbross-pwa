@@ -403,3 +403,15 @@ body{
 .history-guests.hidden{
   display:none !important;
 }
+
+.clear-history-btn{
+  width:100%;
+  height:54px;
+  border:none;
+  border-radius:20px;
+  background:#ff3b3b;
+  color:#fff;
+  font-size:17px;
+  font-weight:900;
+  margin:12px 0 4px;
+}

@@ -174,6 +174,18 @@ app.get('/api/history', requirePin, async (req, res) => {
   }
 });
 
+app.delete('/api/history', requirePin, async (req, res) => {
+  try {
+    const data = await readData();
+    data.history = [];
+
+    await writeData(data);
+    res.json({ history: [] });
+  } catch {
+    res.status(500).json({ error: 'No se pudo borrar el historial' });
+  }
+});
+
 app.get('/api/blacklist', requirePin, async (req, res) => {
   try {
     const data = await readData();
