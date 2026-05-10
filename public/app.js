@@ -491,6 +491,8 @@ function renderHistory() {
 
   $('historyList').innerHTML = filtered.length ? filtered.map(h => {
     const list = (h.guests || []).map(normalizeGuest);
+    const normalCount = list.filter(g => !g.vip).length;
+    const vipCount = list.filter(g => g.vip).length;
     const people = list.reduce((s, g) => s + Number(g.qty || 0), 0);
     const entered = list.reduce((s, g) => s + Number(g.entered || 0), 0);
     const pending = people - entered;
@@ -501,7 +503,7 @@ function renderHistory() {
         <button class="history-toggle" onclick="toggleHistory('${h.id}')">
           <div>
             <div class="history-date">${formatDate(h.date)}</div>
-            <div class="sub">Invitados ${list.length} · Personas ${people} · Ingresaron ${entered} · No ingresaron ${pending}</div>
+            <div class="sub">Invitados ${normalCount} · VIP ${vipCount} · Personas ${people} · Ingresaron ${entered} · No ingresaron ${pending}</div>
           </div>
           <span class="history-plus">${isOpen ? '−' : '+'}</span>
         </button>
@@ -514,8 +516,8 @@ function renderHistory() {
             const status = ent === 0 ? 'No vino' : ent >= qty ? 'Vino' : 'Parcial';
 
             return `
-              <div class="history-line">
-                <strong>${escapeHtml(g.name)}</strong>
+              <div class="history-line ${g.vip ? 'history-vip-line' : ''}">
+                <strong>${escapeHtml(g.name)} ${g.vip ? '<span class="vip-badge">VIP</span>' : ''}</strong>
                 <span>${status} · ${ent}/${qty} · Pendientes ${pend}</span>
               </div>
             `;
