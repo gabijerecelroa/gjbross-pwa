@@ -34,6 +34,23 @@ $('closeListBtn').onclick = closeList;
 $('closeVipListBtn').onclick = closeVipList;
 $('clearHistoryBtn').onclick = clearHistory;
 
+$('refreshBtn').onclick = async () => {
+  const btn = $('refreshBtn');
+  const oldText = btn.textContent;
+
+  btn.disabled = true;
+  btn.textContent = 'Actualizando...';
+
+  await load();
+
+  btn.textContent = 'Actualizado ✓';
+
+  setTimeout(() => {
+    btn.textContent = oldText;
+    btn.disabled = false;
+  }, 1200);
+};
+
 function showTab(tab) {
   const vip = tab === 'vip';
   const black = tab === 'blacklist';

@@ -497,3 +497,20 @@ body{
 .vip-badge{
   display:none !important;
 }
+
+.refresh-btn{
+  margin-top:10px;
+  height:38px;
+  padding:0 18px;
+  border:none;
+  border-radius:999px;
+  background:#14b8ff;
+  color:#001018;
+  font-size:14px;
+  font-weight:900;
+  box-shadow:0 8px 20px rgba(20,184,255,.22);
+}
+
+.refresh-btn:disabled{
+  opacity:.75;
+}
