@@ -1,48 +1,51 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#050505" />
-  <title>GJBROSS</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CONEXION</title>
+  <meta name="theme-color" content="#0b0b0f" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icon-192.png" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <main class="app">
-    <header class="hero">
-      <img src="/logo.jpg" class="logo" alt="GJBROSS" />
-      <div>
-        <p class="eyebrow">Lista especial</p>
-        <h1>GJBROSS</h1>
-        <p class="muted">Invitados del boliche</p>
-      </div>
-    </header>
-
-    <section class="pin-card" id="pinCard">
-      <input id="pinInput" type="password" inputmode="numeric" placeholder="PIN del personal" />
+  <main class="wrap">
+    <section id="pinCard" class="card pin-card hidden">
+      <h2>Ingresar PIN</h2>
+      <input id="pinInput" placeholder="PIN" />
       <button id="savePinBtn">Entrar</button>
     </section>
 
-    <section class="stats">
-      <div><span id="guestCount">0</span><small>Invitados</small></div>
-      <div><span id="peopleCount">0</span><small>Personas</small></div>
-      <div><span id="attendedCount">0</span><small>Asistieron</small></div>
-      <div><span id="pendingCount">0</span><small>Pendientes</small></div>
+    <section class="card hero">
+      <img src="/cnx-logo.png" class="hero-logo" alt="CNX" />
+      <div class="hero-text">
+        <div class="eyebrow">LISTA ESPECIAL</div>
+        <img src="/conexion-wordmark.jpg" class="wordmark" alt="CONEXION" />
+        <div class="subtitle">Invitados del boliche</div>
+      </div>
     </section>
 
-    <form class="card form" id="guestForm">
-      <input id="nameInput" placeholder="Nombre del invitado" autocomplete="off" />
-      <input id="qtyInput" type="number" min="1" value="1" />
-      <button>Agregar</button>
-    </form>
+    <section class="stats">
+      <div class="card stat"><div id="guestCount" class="num">0</div><div>Invitados</div></div>
+      <div class="card stat"><div id="peopleCount" class="num">0</div><div>Personas</div></div>
+      <div class="card stat"><div id="attendedCount" class="num">0</div><div>Asistieron</div></div>
+      <div class="card stat"><div id="pendingCount" class="num">0</div><div>Pendientes</div></div>
+    </section>
+
+    <section class="card">
+      <form id="guestForm" class="guest-form">
+        <input id="nameInput" placeholder="Nombre del invitado" />
+        <input id="qtyInput" type="number" min="1" value="1" />
+        <button type="submit">Agregar</button>
+      </form>
+    </section>
 
     <section class="card">
       <input id="searchInput" class="search" placeholder="Buscar invitado..." />
       <div id="list" class="list"></div>
     </section>
   </main>
+
   <script src="/app.js"></script>
 </body>
 </html>
