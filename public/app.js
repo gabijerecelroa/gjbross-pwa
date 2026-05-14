@@ -4,6 +4,7 @@ const GUEST_CACHE = 'conexion_guests_cache';
 const VIP_CACHE = 'conexion_vip_cache';
 const BLACK_CACHE = 'conexion_blacklist_cache';
 const HISTORY_CACHE = 'conexion_history_cache';
+const EVENT_DATE_CACHE = 'conexion_event_date_cache';
 
 let guests = loadCache(GUEST_CACHE);
 let vipGuests = loadCache(VIP_CACHE);
@@ -13,8 +14,9 @@ let openHistory = new Set();
 let pin = localStorage.getItem('gjbross_pin') || '';
 
 $('pinInput').value = pin;
-$('closeDateInput').value = today();
-$('vipCloseDateInput').value = today();
+const savedEventDate = localStorage.getItem(EVENT_DATE_CACHE) || today();
+$('closeDateInput').value = savedEventDate;
+$('vipCloseDateInput').value = savedEventDate;
 
 if (pin) $('pinCard').classList.add('hidden');
 else $('pinCard').classList.remove('hidden');
@@ -33,6 +35,17 @@ $('btnHistoryTab').onclick = () => showTab('history');
 $('closeListBtn').onclick = closeList;
 $('closeVipListBtn').onclick = closeVipList;
 $('clearHistoryBtn').onclick = clearHistory;
+
+function saveEventDate(value) {
+  const date = value || today();
+  localStorage.setItem(EVENT_DATE_CACHE, date);
+
+  if ($('closeDateInput')) $('closeDateInput').value = date;
+  if ($('vipCloseDateInput')) $('vipCloseDateInput').value = date;
+}
+
+$('closeDateInput').addEventListener('change', (e) => saveEventDate(e.target.value));
+$('vipCloseDateInput').addEventListener('change', (e) => saveEventDate(e.target.value));
 
 $('refreshBtn').onclick = async () => {
   const btn = $('refreshBtn');
